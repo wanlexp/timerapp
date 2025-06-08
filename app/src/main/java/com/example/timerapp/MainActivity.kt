@@ -13,16 +13,17 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
 
     private lateinit var inputMinutes: EditText
+    private lateinit var inputSeconds: EditText
     private lateinit var startTimerButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)  // 레이아웃 설정
+        setContentView(R.layout.activity_main)
 
         inputMinutes = findViewById(R.id.inputMinutes)
+        inputSeconds = findViewById(R.id.inputSeconds)
         startTimerButton = findViewById(R.id.startTimerButton)
 
-        // 오버레이 권한 체크
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -33,24 +34,30 @@ class MainActivity : AppCompatActivity() {
 
         startTimerButton.setOnClickListener {
             val minutesStr = inputMinutes.text.toString()
-            if (minutesStr.isEmpty()) {
-                Toast.makeText(this, "시간(분)을 입력하세요", Toast.LENGTH_SHORT).show()
+            val secondsStr = inputSeconds.text.toString()
+
+            // 입력값 없으면 0으로 처리
+            val minutes = minutesStr.toLongOrNull() ?: 0L
+            val seconds = secondsStr.toLongOrNull() ?: 0L
+
+            if (minutes == 0L && seconds == 0L) {
+                Toast.makeText(this, "분 또는 초 단위로 시간을 입력하세요", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val minutes = minutesStr.toLongOrNull()
-            if (minutes == null || minutes <= 0) {
-                Toast.makeText(this, "올바른 시간을 입력하세요", Toast.LENGTH_SHORT).show()
+            if (seconds !in 0..59) {
+                Toast.makeText(this, "초는 0~59 사이의 값이어야 합니다", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val duration = minutes * 60 * 1000L  // 밀리초로 변환
+            val duration = (minutes * 60 + seconds) * 1000L  // 밀리초 변환
 
-            val serviceIntent = Intent(this, TimerService::class.java)
-            serviceIntent.putExtra("durationMillis", duration)
+            val serviceIntent = Intent(this, TimerService::class.java).apply {
+                putExtra("durationMillis", duration)
+            }
             ContextCompat.startForegroundService(this, serviceIntent)
 
-            Toast.makeText(this, "${minutes}분 타이머 시작", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "타이머 시작: ${minutes}분 ${seconds}초", Toast.LENGTH_SHORT).show()
         }
     }
 }

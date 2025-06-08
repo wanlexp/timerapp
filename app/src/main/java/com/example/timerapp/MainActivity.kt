@@ -16,6 +16,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inputSeconds: EditText
     private lateinit var startTimerButton: Button
 
+    private var isTimerRunning = false  // 상태 변수
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -33,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         startTimerButton.setOnClickListener {
+            if(!isTimerRunning){
             val minutesStr = inputMinutes.text.toString()
             val secondsStr = inputSeconds.text.toString()
 
@@ -52,12 +55,26 @@ class MainActivity : AppCompatActivity() {
 
             val duration = (minutes * 60 + seconds) * 1000L  // 밀리초 변환
 
-            val serviceIntent = Intent(this, TimerService::class.java).apply {
-                putExtra("durationMillis", duration)
-            }
+                val serviceIntent = Intent(this, TimerService::class.java).apply {
+                    action = "START_TIMER"
+                    putExtra("durationMillis", duration)
+                }
             ContextCompat.startForegroundService(this, serviceIntent)
 
             Toast.makeText(this, "타이머 시작: ${minutes}분 ${seconds}초", Toast.LENGTH_SHORT).show()
+            startTimerButton.text = "타이머 중지"
+            isTimerRunning = true
         }
+            else{
+                Toast.makeText(this, "타이머 중지", Toast.LENGTH_SHORT).show()
+                val stopIntent = Intent(this, TimerService::class.java).apply {
+                    action = "STOP_TIMER"
+                }
+                startService(stopIntent)
+                startTimerButton.text = "타이머 시작"
+                isTimerRunning = false
+            }
+        }
+
     }
 }

@@ -18,10 +18,12 @@ class TimerService : Service() {
     private var isTimerRunning = false
     private val handler = Handler(Looper.getMainLooper())
     private var repeatRunnable: Runnable? = null
+    private var repeatCount = 0  // 반복 횟수 카운트
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             "START_TIMER" -> {
+                repeatCount=0
                 durationMillis = intent.getLongExtra("durationMillis", 0L)
                 startForeground(1, createNotification())
                 isTimerRunning=true
@@ -65,7 +67,9 @@ class TimerService : Service() {
 
             override fun onFinish() {
                 if (isTimerRunning) {
-                    OverlayUtil.showOverlayView(applicationContext)
+                    repeatCount++
+                    val totalUsedSeconds = (durationMillis / 1000) * repeatCount
+                    OverlayUtil.showOverlayView(applicationContext, totalUsedSeconds)
 
                     repeatRunnable = Runnable {
                         if (isTimerRunning) {
